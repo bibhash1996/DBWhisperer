@@ -9,6 +9,12 @@ import { graph } from "../controllers/graph";
 
 const router = express.Router();
 
+router.get("/", async (req: Request, res: Response) => {
+  return res.status(200).json({
+    data: connections,
+  });
+});
+
 router.post("/connection", async (req: Request, res: Response) => {
   const {
     connectionName,
@@ -42,6 +48,7 @@ router.post("/connection", async (req: Request, res: Response) => {
     username,
     password,
     id: uuidv4(),
+    tables: [],
   };
 
   /**
@@ -58,6 +65,14 @@ router.post("/connection", async (req: Request, res: Response) => {
     return;
   }
 
+  const tables = await db.executeQuery(`
+      SELECT table_name
+      FROM information_schema.tables
+      WHERE table_schema = 'public'
+      AND table_type = 'BASE TABLE';
+  `);
+
+  newConnection.tables = (tables || []).map((t: any) => t.table_name);
   connections.push(newConnection);
 
   res.status(201).json({

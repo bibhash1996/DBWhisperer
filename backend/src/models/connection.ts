@@ -10,6 +10,7 @@ export type DatabaseConnection = {
   username: string;
   password: string;
   id?: string;
+  tables: any[];
 };
 
 // In-memory storage for connections

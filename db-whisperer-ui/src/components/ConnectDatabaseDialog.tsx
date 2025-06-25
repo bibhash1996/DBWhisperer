@@ -1,8 +1,7 @@
-
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -11,75 +10,89 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Plus } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+} from "@/components/ui/select";
+import { Plus } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { createConnection } from "@/api/db";
 
 interface ConnectDatabaseDialogProps {
   onConnect: (connectionData: any) => void;
 }
 
-export const ConnectDatabaseDialog: React.FC<ConnectDatabaseDialogProps> = ({ onConnect }) => {
+export const ConnectDatabaseDialog: React.FC<ConnectDatabaseDialogProps> = ({
+  onConnect,
+}) => {
   const [open, setOpen] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const { toast } = useToast();
-  
+
   const [formData, setFormData] = useState({
-    name: '',
-    type: 'postgresql',
-    host: '',
-    port: '',
-    database: '',
-    username: '',
-    password: ''
+    name: "",
+    type: "PostgreSQL",
+    host: "",
+    port: "",
+    database: "",
+    username: "",
+    password: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsConnecting(true);
-    
+
     try {
       // Simulate connection attempt
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      // await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      const connection = await createConnection({
+        connectionName: formData.name,
+        databaseName: formData.database,
+        databaseType: formData.type,
+        host: formData.host,
+        password: formData.password,
+        port: formData.port,
+        username: formData.username,
+      });
+
       const newConnection = {
-        id: `db_${Date.now()}`,
-        name: formData.name,
-        type: formData.type as 'postgresql' | 'mysql' | 'sqlite',
-        status: 'connected' as const,
-        tables: [
-          { id: 'sample_table', name: 'sample_table', rowCount: 0 }
-        ]
+        // id: `db_${Date.now()}`,
+        // name: formData.name,
+        // type: formData.type as "PostgreSQL" | "MySQL",
+        // status: "connected" as const,
+        // tables: [{ id: "sample_table", name: "sample_table", rowCount: 0 }],
+        ...connection,
+        status: "connected" as const,
       };
-      
+
       onConnect(newConnection);
-      
+
       toast({
         title: "Database Connected",
         description: `Successfully connected to ${formData.name}`,
       });
-      
+
       setOpen(false);
       setFormData({
-        name: '',
-        type: 'postgresql',
-        host: '',
-        port: '',
-        database: '',
-        username: '',
-        password: ''
+        name: "",
+        type: "PostgreSQL",
+        host: "",
+        port: "",
+        database: "",
+        username: "",
+        password: "",
       });
     } catch (error) {
       toast({
         title: "Connection Failed",
-        description: "Failed to connect to the database. Please check your credentials.",
+        description:
+          "Failed to connect to the database. Please check your credentials.",
         variant: "destructive",
       });
     } finally {
@@ -88,7 +101,7 @@ export const ConnectDatabaseDialog: React.FC<ConnectDatabaseDialogProps> = ({ on
   };
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   return (
@@ -113,25 +126,28 @@ export const ConnectDatabaseDialog: React.FC<ConnectDatabaseDialogProps> = ({ on
               id="name"
               placeholder="My Database"
               value={formData.name}
-              onChange={(e) => handleInputChange('name', e.target.value)}
+              onChange={(e) => handleInputChange("name", e.target.value)}
               required
             />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="type">Database Type</Label>
-            <Select value={formData.type} onValueChange={(value) => handleInputChange('type', value)}>
+            <Select
+              value={formData.type}
+              onValueChange={(value) => handleInputChange("type", value)}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select database type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="postgresql">PostgreSQL</SelectItem>
-                <SelectItem value="mysql">MySQL</SelectItem>
-                <SelectItem value="sqlite">SQLite</SelectItem>
+                <SelectItem value="PostgreSQL">PostgreSQL</SelectItem>
+                <SelectItem value="MySQL">MySQL</SelectItem>
+                {/* <SelectItem value="sqlite">SQLite</SelectItem> */}
               </SelectContent>
             </Select>
           </div>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="host">Host</Label>
@@ -139,7 +155,7 @@ export const ConnectDatabaseDialog: React.FC<ConnectDatabaseDialogProps> = ({ on
                 id="host"
                 placeholder="localhost"
                 value={formData.host}
-                onChange={(e) => handleInputChange('host', e.target.value)}
+                onChange={(e) => handleInputChange("host", e.target.value)}
                 required
               />
             </div>
@@ -149,34 +165,34 @@ export const ConnectDatabaseDialog: React.FC<ConnectDatabaseDialogProps> = ({ on
                 id="port"
                 placeholder="5432"
                 value={formData.port}
-                onChange={(e) => handleInputChange('port', e.target.value)}
+                onChange={(e) => handleInputChange("port", e.target.value)}
                 required
               />
             </div>
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="database">Database Name</Label>
             <Input
               id="database"
               placeholder="my_database"
               value={formData.database}
-              onChange={(e) => handleInputChange('database', e.target.value)}
+              onChange={(e) => handleInputChange("database", e.target.value)}
               required
             />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="username">Username</Label>
             <Input
               id="username"
               placeholder="username"
               value={formData.username}
-              onChange={(e) => handleInputChange('username', e.target.value)}
+              onChange={(e) => handleInputChange("username", e.target.value)}
               required
             />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
             <Input
@@ -184,17 +200,21 @@ export const ConnectDatabaseDialog: React.FC<ConnectDatabaseDialogProps> = ({ on
               type="password"
               placeholder="password"
               value={formData.password}
-              onChange={(e) => handleInputChange('password', e.target.value)}
+              onChange={(e) => handleInputChange("password", e.target.value)}
               required
             />
           </div>
-          
+
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={isConnecting}>
-              {isConnecting ? 'Connecting...' : 'Connect'}
+              {isConnecting ? "Connecting..." : "Connect"}
             </Button>
           </DialogFooter>
         </form>
