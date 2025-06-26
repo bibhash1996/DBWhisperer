@@ -1,6 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import dbRoutes from "./routes/db.routes";
+import cors from "cors";
 
 // Load environment variables
 dotenv.config();
@@ -9,6 +10,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // Middleware
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

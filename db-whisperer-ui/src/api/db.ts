@@ -37,3 +37,19 @@ export async function createConnection(connection: CreateConnection) {
     return data.connection;
   }
 }
+
+export async function getSampleData(connectionId: string, table: string) {
+  const response = await fetch(
+    `${API_BASE_URL}/db/sample/${connectionId}?table=${table}`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+  if (response.status >= 200 && response.status <= 299) {
+    const data = await response.json();
+    return data.data;
+  }
+}

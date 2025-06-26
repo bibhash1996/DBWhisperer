@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ChevronRight,
   ChevronDown,
@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ConnectDatabaseDialog } from "./ConnectDatabaseDialog";
+import { getAllConnections } from "@/api/db";
 
 // interface Table {
 //   id: string;
@@ -17,8 +18,8 @@ import { ConnectDatabaseDialog } from "./ConnectDatabaseDialog";
 
 interface DatabaseConnection {
   id: string;
-  name: string;
-  type: "PostgreSQL" | "MySQL";
+  connectionName: string;
+  databaseType: "PostgreSQL" | "MySQL";
   status: "connected" | "disconnected";
   tables: string[];
 }
@@ -81,6 +82,15 @@ export const DatabaseSidebar: React.FC<DatabaseSidebarProps> = ({
     setDatabases((prev) => [...prev, newConnection]);
   };
 
+  const getDatabaseConnections = async () => {
+    const conn = await getAllConnections();
+    setDatabases(conn);
+  };
+
+  useEffect(() => {
+    getDatabaseConnections();
+  }, []);
+
   const toggleDbExpansion = (dbId: string) => {
     const newExpanded = new Set(expandedDbs);
     if (newExpanded.has(dbId)) {
@@ -97,9 +107,9 @@ export const DatabaseSidebar: React.FC<DatabaseSidebarProps> = ({
 
   const getDbIcon = (type: string) => {
     switch (type) {
-      case "postgresql":
+      case "PostgreSQL":
         return "🐘";
-      case "mysql":
+      case "MySQL":
         return "🐬";
       case "sqlite":
         return "📁";
@@ -115,9 +125,9 @@ export const DatabaseSidebar: React.FC<DatabaseSidebarProps> = ({
           <div
             key={db.id}
             className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center cursor-pointer hover:bg-accent transition-colors"
-            title={db.name}
+            title={db.connectionName}
           >
-            <span className="text-lg">{getDbIcon(db.type)}</span>
+            <span className="text-lg">{getDbIcon(db.databaseType)}</span>
           </div>
         ))}
       </div>
@@ -144,11 +154,13 @@ export const DatabaseSidebar: React.FC<DatabaseSidebarProps> = ({
               onClick={() => toggleDbExpansion(db.id)}
             >
               <div className="flex items-center space-x-3">
-                <div className="text-lg">{getDbIcon(db.type)}</div>
+                <div className="text-lg">{getDbIcon(db.databaseType)}</div>
                 <div className="flex-1">
-                  <div className="font-medium text-foreground">{db.name}</div>
+                  <div className="font-medium text-foreground">
+                    {db.connectionName}
+                  </div>
                   <div className="text-xs text-muted-foreground capitalize">
-                    {db.type}
+                    {db.databaseType}
                   </div>
                 </div>
                 <div
@@ -168,7 +180,7 @@ export const DatabaseSidebar: React.FC<DatabaseSidebarProps> = ({
             </div>
 
             {expandedDbs.has(db.id) && (
-              <div className="ml-8 mt-1 space-y-1">
+              <div className="ml-8 mt-1 space-y-1 max-h-96 overflow-auto">
                 {db.tables.map((table) => (
                   <div
                     key={table}

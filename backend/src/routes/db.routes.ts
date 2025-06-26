@@ -114,4 +114,26 @@ router.post("/execute/:id", async (req: Request, res: Response) => {
   });
 });
 
+router.get("/sample/:id", async (req: Request, res: Response) => {
+  const connection = connections.find(
+    (connection) => connection.id === req.params.id
+  );
+  if (!connection) {
+    res.status(404).json({ error: "Connection not found." });
+    return;
+  }
+  const db = new Database(connection);
+
+  let tableName = req.query.table as string;
+  console.log(tableName);
+
+  const response = await db.executeQuery(
+    `SELECT * FROM "${tableName}" LIMIT 3`
+  );
+
+  res.status(200).json({
+    data: response,
+  });
+});
+
 export default router;
