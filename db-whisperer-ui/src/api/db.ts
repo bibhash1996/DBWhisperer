@@ -10,6 +10,16 @@ interface CreateConnection {
   password: string;
 }
 
+export interface NaturalExecutionResponse {
+  question: string;
+  query: string;
+  relevant: string;
+  query_result: string;
+  connection_id: string;
+  human_readable_response: string;
+  logs: string[];
+}
+
 export async function getAllConnections() {
   const response = await fetch(`${API_BASE_URL}/db`, {
     method: "GET",
@@ -48,6 +58,23 @@ export async function getSampleData(connectionId: string, table: string) {
       },
     }
   );
+  if (response.status >= 200 && response.status <= 299) {
+    const data = await response.json();
+    return data.data;
+  }
+}
+
+export async function executeNaturalLanguageQuery(
+  connectionId: string,
+  question: string
+): Promise<NaturalExecutionResponse> {
+  const response = await fetch(`${API_BASE_URL}/db/execute/${connectionId}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ question }),
+  });
   if (response.status >= 200 && response.status <= 299) {
     const data = await response.json();
     return data.data;

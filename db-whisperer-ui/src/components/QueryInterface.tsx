@@ -16,21 +16,11 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { getSampleData } from "@/api/db";
+  executeNaturalLanguageQuery,
+  getSampleData,
+  NaturalExecutionResponse,
+} from "@/api/db";
 import { TabularData } from "./TabularData";
-
-interface Table {
-  id: string;
-  name: string;
-  rowCount: number;
-}
 
 interface DatabaseConnection {
   id: string;
@@ -40,17 +30,14 @@ interface DatabaseConnection {
   tables: string[];
 }
 
-interface QueryResult {
-  columns: string[];
-  rows: any[][];
-  affectedRows?: number;
-  executionTime: number;
+interface Message {
+  user: "system" | "user";
+  message?: string;
+  response?: NaturalExecutionResponse;
 }
 
 interface GeneratedQuery {
   sql: string;
-  explanation: string;
-  confidence: number;
 }
 
 interface QueryInterfaceProps {
@@ -68,7 +55,8 @@ export const QueryInterface: React.FC<QueryInterfaceProps> = ({
   );
   const [isGenerating, setIsGenerating] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
-  const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
+  // const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [sampleData, setSampleData] = useState<any[]>([]);
   const [showApproval, setShowApproval] = useState(false);
   const { toast } = useToast();
@@ -80,58 +68,61 @@ export const QueryInterface: React.FC<QueryInterfaceProps> = ({
       });
   }, [selectedTable]);
 
-  const mockQueryGeneration = async (
-    input: string
-  ): Promise<GeneratedQuery> => {
-    // Simulate API call to generate SQL from natural language
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+  //   input: string
+  // ): Promise<GeneratedQuery> => {
+  //   // Simulate API call to generate SQL from natural language
+  //   await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    const queries = [
-      {
-        sql: `SELECT * FROM ${
-          selectedTable || "users"
-        } WHERE created_at > '2024-01-01' LIMIT 10;`,
-        explanation:
-          "This query retrieves the first 10 records from the users table created after January 1st, 2024.",
-        confidence: 95,
-      },
-      {
-        sql: `SELECT COUNT(*) as total_users FROM ${selectedTable || "users"};`,
-        explanation:
-          "This query counts the total number of users in the database.",
-        confidence: 98,
-      },
-    ];
+  //   const queries = [
+  //     {
+  //       sql: `SELECT * FROM ${
+  //         selectedTable || "users"
+  //       } WHERE created_at > '2024-01-01' LIMIT 10;`,
+  //       explanation:
+  //         "This query retrieves the first 10 records from the users table created after January 1st, 2024.",
+  //       confidence: 95,
+  //     },
+  //     {
+  //       sql: `SELECT COUNT(*) as total_users FROM ${selectedTable || "users"};`,
+  //       explanation:
+  //         "This query counts the total number of users in the database.",
+  //       confidence: 98,
+  //     },
+  //   ];
 
-    return queries[Math.floor(Math.random() * queries.length)];
-  };
+  //   return queries[Math.floor(Math.random() * queries.length)];
+  // };
 
-  const mockQueryExecution = async (sql: string): Promise<QueryResult> => {
-    // Simulate query execution
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+  // const mockQueryExecution = async (sql: string): Promise<QueryResult> => {
+  //   // Simulate query execution
+  //   await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    return {
-      columns: ["id", "name", "email", "created_at"],
-      rows: [
-        [1, "John Doe", "john@example.com", "2024-01-15"],
-        [2, "Jane Smith", "jane@example.com", "2024-01-16"],
-        [3, "Bob Johnson", "bob@example.com", "2024-01-17"],
-        [4, "Alice Brown", "alice@example.com", "2024-01-18"],
-        [5, "Charlie Wilson", "charlie@example.com", "2024-01-19"],
-      ],
-      executionTime: 145,
-    };
-  };
+  //   return {
+  //     columns: ["id", "name", "email", "created_at"],
+  //     rows: [
+  //       [1, "John Doe", "john@example.com", "2024-01-15"],
+  //       [2, "Jane Smith", "jane@example.com", "2024-01-16"],
+  //       [3, "Bob Johnson", "bob@example.com", "2024-01-17"],
+  //       [4, "Alice Brown", "alice@example.com", "2024-01-18"],
+  //       [5, "Charlie Wilson", "charlie@example.com", "2024-01-19"],
+  //     ],
+  //     executionTime: 145,
+  //   };
+  // };
 
   const handleGenerateQuery = async () => {
     if (!naturalLanguageInput.trim()) return;
-
+    setMessages((messages) => [
+      ...messages,
+      { user: "user", message: naturalLanguageInput.trim() },
+    ]);
     setIsGenerating(true);
     try {
-      const query = await mockQueryGeneration(naturalLanguageInput);
-      setGeneratedQuery(query);
-      setShowApproval(true);
-      setQueryResult(null);
+      const response = await executeNaturalLanguageQuery(
+        selectedTable.dbId,
+        naturalLanguageInput.trim()
+      );
+      setMessages((messages) => [...messages, { user: "system", response }]);
     } catch (error) {
       toast({
         title: "Error",
@@ -140,29 +131,6 @@ export const QueryInterface: React.FC<QueryInterfaceProps> = ({
       });
     } finally {
       setIsGenerating(false);
-    }
-  };
-
-  const handleExecuteQuery = async () => {
-    if (!generatedQuery) return;
-
-    setIsExecuting(true);
-    try {
-      const result = await mockQueryExecution(generatedQuery.sql);
-      setQueryResult(result);
-      setShowApproval(false);
-      toast({
-        title: "Query executed successfully",
-        description: `Returned ${result.rows.length} rows in ${result.executionTime}ms`,
-      });
-    } catch (error) {
-      toast({
-        title: "Execution Error",
-        description: "Failed to execute query. Please check the SQL syntax.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsExecuting(false);
     }
   };
 
@@ -243,7 +211,7 @@ export const QueryInterface: React.FC<QueryInterfaceProps> = ({
       </div>
 
       {sampleData && sampleData.length ? (
-        <div className="flex-1 flex-col">
+        <div className="">
           <TabularData
             heading="Sample Dataset"
             columns={Object.keys(sampleData[0])}
@@ -259,7 +227,10 @@ export const QueryInterface: React.FC<QueryInterfaceProps> = ({
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Send className="w-5 h-5" />
-                <span>Natural Language Query</span>
+                <span>
+                  Natural Language Query
+                  <span className="text-sm"> (Database context)</span>
+                </span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -302,31 +273,34 @@ export const QueryInterface: React.FC<QueryInterfaceProps> = ({
         {/* Results Section - Scrollable */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Generated Query Approval */}
-          {showApproval && generatedQuery && (
+          {messages.map((message, idx) => (
             <Card className="border-blue-200 bg-blue-50/50">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
+                  {message.user}
+                  {/* <div className="flex items-center space-x-2">
                     <AlertCircle className="w-5 h-5 text-blue-600" />
                     <span>Generated Query - Approval Required</span>
-                  </div>
-                  <Badge
+                  </div> */}
+                  {/* <Badge
                     variant={
                       generatedQuery.confidence > 90 ? "default" : "secondary"
                     }
                   >
                     {generatedQuery.confidence}% confidence
-                  </Badge>
+                  </Badge> */}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <p className="text-sm text-muted-foreground mb-2">
+                  {/* <p className="text-sm text-muted-foreground mb-2">
                     {generatedQuery.explanation}
-                  </p>
+                  </p> */}
                   <div className="relative">
                     <pre className="bg-muted p-4 rounded-lg text-sm font-mono overflow-x-auto">
-                      {generatedQuery.sql}
+                      {message.user == "system"
+                        ? message.response.human_readable_response
+                        : message.message}
                     </pre>
                     <Button
                       size="sm"
@@ -338,7 +312,7 @@ export const QueryInterface: React.FC<QueryInterfaceProps> = ({
                     </Button>
                   </div>
                 </div>
-                <div className="flex space-x-3">
+                {/* <div className="flex space-x-3">
                   <Button
                     onClick={handleExecuteQuery}
                     disabled={isExecuting}
@@ -362,58 +336,10 @@ export const QueryInterface: React.FC<QueryInterfaceProps> = ({
                   >
                     Cancel
                   </Button>
-                </div>
+                </div> */}
               </CardContent>
             </Card>
-          )}
-
-          {/* Query Results */}
-          {queryResult && (
-            <Card className="border-green-200 bg-green-50/50">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                    <span>Query Results</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Badge variant="outline">
-                      {queryResult.rows.length} rows •{" "}
-                      {queryResult.executionTime}ms
-                    </Badge>
-                    <Button size="sm" variant="outline">
-                      <Download className="w-4 h-4 mr-1" />
-                      Export
-                    </Button>
-                  </div>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="border rounded-lg overflow-hidden">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        {queryResult.columns.map((column, index) => (
-                          <TableHead key={index} className="font-semibold">
-                            {column}
-                          </TableHead>
-                        ))}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {queryResult.rows.map((row, rowIndex) => (
-                        <TableRow key={rowIndex}>
-                          {row.map((cell, cellIndex) => (
-                            <TableCell key={cellIndex}>{cell}</TableCell>
-                          ))}
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          ))}
 
           {/* Empty State */}
           {!selectedDatabase && (
