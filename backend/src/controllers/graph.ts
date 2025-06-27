@@ -274,7 +274,8 @@ async function executeSql(state: State) {
     console.log("Query Result");
     console.log(result);
     return {
-      query_result: result,
+      query_result: response,
+      // sqlResult: response,
     };
   } catch (error) {
     return {

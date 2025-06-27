@@ -6,8 +6,10 @@ import {
   CheckCircle,
   Loader2,
   Copy,
-  Download,
+  MessageSquare,
   Database,
+  User,
+  Bot,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,14 +23,7 @@ import {
   NaturalExecutionResponse,
 } from "@/api/db";
 import { TabularData } from "./TabularData";
-
-interface DatabaseConnection {
-  id: string;
-  connectionName: string;
-  databaseType: "PostgreSQL" | "MySQL";
-  status: "connected" | "disconnected";
-  tables: string[];
-}
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Message {
   user: "system" | "user";
@@ -270,77 +265,83 @@ export const QueryInterface: React.FC<QueryInterfaceProps> = ({
           </Card>
         </div>
 
-        {/* Results Section - Scrollable */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Generated Query Approval */}
-          {messages.map((message, idx) => (
-            <Card className="border-blue-200 bg-blue-50/50">
+        {messages.length > 0 && (
+          <div className="p-6 border-b border-border">
+            <Card>
               <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  {message.user}
-                  {/* <div className="flex items-center space-x-2">
-                    <AlertCircle className="w-5 h-5 text-blue-600" />
-                    <span>Generated Query - Approval Required</span>
-                  </div> */}
-                  {/* <Badge
-                    variant={
-                      generatedQuery.confidence > 90 ? "default" : "secondary"
-                    }
-                  >
-                    {generatedQuery.confidence}% confidence
-                  </Badge> */}
+                <CardTitle className="flex items-center space-x-2">
+                  <MessageSquare className="w-5 h-5" />
+                  <span>Conversation History</span>
+                  <Badge variant="outline">{messages.length}</Badge>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  {/* <p className="text-sm text-muted-foreground mb-2">
-                    {generatedQuery.explanation}
-                  </p> */}
-                  <div className="relative">
-                    <pre className="bg-muted p-4 rounded-lg text-sm font-mono overflow-x-auto">
-                      {message.user == "system"
-                        ? message.response.human_readable_response
-                        : message.message}
-                    </pre>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="absolute top-2 right-2"
-                      onClick={() => copyToClipboard(generatedQuery.sql)}
-                    >
-                      <Copy className="w-4 h-4" />
-                    </Button>
+              <CardContent>
+                <ScrollArea className="h-64">
+                  <div className="space-y-3">
+                    {messages.map((entry, id) => (
+                      <div
+                        key={`mess_${id}`}
+                        className="border rounded-lg p-4 space-y-3"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center space-x-2">
+                            {entry.user == "user" ? (
+                              <User className="w-4 h-4 text-blue-600" />
+                            ) : (
+                              <Bot className="w-4 h-4 text-green-600" />
+                            )}
+                            <Badge variant="secondary" className="text-xs">
+                              {entry.user == "user" ? "User" : "System"}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-medium text-foreground">
+                            {entry.user == "user"
+                              ? entry.message
+                              : entry.response.human_readable_response}
+                          </p>
+                        </div>
+
+                        {entry.response && (
+                          <div className="bg-muted/50 rounded-md p-3">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-xs font-medium text-muted-foreground">
+                                Generated SQL
+                              </span>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() =>
+                                  copyToClipboard(entry.response.query)
+                                }
+                                className="h-6 w-6 p-0"
+                              >
+                                <Copy className="w-3 h-3" />
+                              </Button>
+                            </div>
+                            <pre className="text-xs font-mono text-foreground overflow-x-auto">
+                              {entry.response.query}
+                            </pre>
+                          </div>
+                        )}
+
+                        {/* {entry.response && (
+                          <div className="text-xs text-muted-foreground">
+                            ✓ Returned {entry.response.rows.length} rows in {entry.queryResult.executionTime}ms
+                          </div>
+                        )} */}
+                      </div>
+                    ))}
                   </div>
-                </div>
-                {/* <div className="flex space-x-3">
-                  <Button
-                    onClick={handleExecuteQuery}
-                    disabled={isExecuting}
-                    className="flex-1"
-                  >
-                    {isExecuting ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Executing...
-                      </>
-                    ) : (
-                      <>
-                        <Play className="w-4 h-4 mr-2" />
-                        Execute Query
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowApproval(false)}
-                  >
-                    Cancel
-                  </Button>
-                </div> */}
+                </ScrollArea>
               </CardContent>
             </Card>
-          ))}
+          </div>
+        )}
 
+        {/* Results Section - Scrollable */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Empty State */}
           {!selectedDatabase && (
             <Card className="border-dashed">
