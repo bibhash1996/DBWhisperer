@@ -24,12 +24,7 @@ import {
 } from "@/api/db";
 import { TabularData } from "./TabularData";
 import { ScrollArea } from "@/components/ui/scroll-area";
-
-interface Message {
-  user: "system" | "user";
-  message?: string;
-  response?: NaturalExecutionResponse;
-}
+import { Message } from "./DatabaseApp";
 
 interface GeneratedQuery {
   sql: string;
@@ -38,20 +33,17 @@ interface GeneratedQuery {
 interface QueryInterfaceProps {
   selectedDatabase?: any | null;
   selectedTable?: { dbId: string; tableId: string } | null;
+  addMessages: (message: Message) => void;
 }
 
 export const QueryInterface: React.FC<QueryInterfaceProps> = ({
   selectedDatabase,
   selectedTable,
+  addMessages,
 }) => {
   const [naturalLanguageInput, setNaturalLanguageInput] = useState("");
-  const [generatedQuery, setGeneratedQuery] = useState<GeneratedQuery | null>(
-    null
-  );
   const [isGenerating, setIsGenerating] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
-  // const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
   const [sampleData, setSampleData] = useState<any[]>([]);
   const [showApproval, setShowApproval] = useState(false);
   const { toast } = useToast();
@@ -107,17 +99,20 @@ export const QueryInterface: React.FC<QueryInterfaceProps> = ({
 
   const handleGenerateQuery = async () => {
     if (!naturalLanguageInput.trim()) return;
-    setMessages((messages) => [
-      ...messages,
-      { user: "user", message: naturalLanguageInput.trim() },
-    ]);
+    // setMessages((messages) => [
+    //   ...messages,
+    //   { user: "user", message: naturalLanguageInput.trim() },
+    // ]);
+    addMessages({ user: "user", message: naturalLanguageInput.trim() });
     setIsGenerating(true);
+    setNaturalLanguageInput("");
     try {
       const response = await executeNaturalLanguageQuery(
         selectedTable.dbId,
         naturalLanguageInput.trim()
       );
-      setMessages((messages) => [...messages, { user: "system", response }]);
+      // setMessages((messages) => [...messages, { user: "system", response }]);
+      addMessages({ user: "system", response });
     } catch (error) {
       toast({
         title: "Error",
@@ -206,7 +201,7 @@ export const QueryInterface: React.FC<QueryInterfaceProps> = ({
       </div>
 
       {sampleData && sampleData.length ? (
-        <div className="">
+        <div className="flex max-w-[50vw]">
           <TabularData
             heading="Sample Dataset"
             columns={Object.keys(sampleData[0])}
@@ -264,81 +259,6 @@ export const QueryInterface: React.FC<QueryInterfaceProps> = ({
             </CardContent>
           </Card>
         </div>
-
-        {messages.length > 0 && (
-          <div className="p-6 border-b border-border">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <MessageSquare className="w-5 h-5" />
-                  <span>Conversation History</span>
-                  <Badge variant="outline">{messages.length}</Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-64">
-                  <div className="space-y-3">
-                    {messages.map((entry, id) => (
-                      <div
-                        key={`mess_${id}`}
-                        className="border rounded-lg p-4 space-y-3"
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex items-center space-x-2">
-                            {entry.user == "user" ? (
-                              <User className="w-4 h-4 text-blue-600" />
-                            ) : (
-                              <Bot className="w-4 h-4 text-green-600" />
-                            )}
-                            <Badge variant="secondary" className="text-xs">
-                              {entry.user == "user" ? "User" : "System"}
-                            </Badge>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm font-medium text-foreground">
-                            {entry.user == "user"
-                              ? entry.message
-                              : entry.response.human_readable_response}
-                          </p>
-                        </div>
-
-                        {entry.response && (
-                          <div className="bg-muted/50 rounded-md p-3">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-xs font-medium text-muted-foreground">
-                                Generated SQL
-                              </span>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() =>
-                                  copyToClipboard(entry.response.query)
-                                }
-                                className="h-6 w-6 p-0"
-                              >
-                                <Copy className="w-3 h-3" />
-                              </Button>
-                            </div>
-                            <pre className="text-xs font-mono text-foreground overflow-x-auto">
-                              {entry.response.query}
-                            </pre>
-                          </div>
-                        )}
-
-                        {/* {entry.response && (
-                          <div className="text-xs text-muted-foreground">
-                            ✓ Returned {entry.response.rows.length} rows in {entry.queryResult.executionTime}ms
-                          </div>
-                        )} */}
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
-          </div>
-        )}
 
         {/* Results Section - Scrollable */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">

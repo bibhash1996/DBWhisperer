@@ -4,11 +4,19 @@ import { QueryInterface } from "./QueryInterface";
 import { PWAInstallPrompt } from "./PWAInstallPrompt";
 import { Button } from "@/components/ui/button";
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { NaturalExecutionResponse } from "@/api/db";
+import { ConversationHistory } from "./ConversationHistory";
 
 interface Table {
   id: string;
   name: string;
   rowCount: number;
+}
+
+export interface Message {
+  user: "system" | "user";
+  message?: string;
+  response?: NaturalExecutionResponse;
 }
 
 interface DatabaseConnection {
@@ -20,6 +28,7 @@ interface DatabaseConnection {
 }
 
 export const DatabaseApp: React.FC = () => {
+  const [messages, setMessages] = useState<Message[]>([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [selectedTable, setSelectedTable] = useState<{
     dbId: string;
@@ -27,6 +36,7 @@ export const DatabaseApp: React.FC = () => {
   } | null>(null);
   const [selectedDatabase, setSelectedDatabase] =
     useState<DatabaseConnection | null>(null);
+  const [historyCollapsed, setHistoryCollapsed] = useState(false);
 
   const handleSelectTable = (dbId: string, table: string, database: any) => {
     setSelectedTable({ dbId, tableId: table });
@@ -62,11 +72,16 @@ export const DatabaseApp: React.FC = () => {
               : "Select a database to begin"}
           </div>
         </div>
-
-        <QueryInterface
-          selectedDatabase={selectedDatabase}
-          selectedTable={selectedTable}
-        />
+        <div className="flex flex-1 overflow-hidden">
+          <QueryInterface
+            selectedDatabase={selectedDatabase}
+            selectedTable={selectedTable}
+            addMessages={(message) => {
+              setMessages((msgs) => [...msgs, message]);
+            }}
+          />
+          <ConversationHistory messages={messages} />
+        </div>
       </div>
 
       <PWAInstallPrompt />
