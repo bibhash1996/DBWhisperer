@@ -21,10 +21,10 @@ export interface Message {
 
 interface DatabaseConnection {
   id: string;
-  name: string;
-  type: "postgresql" | "mysql" | "sqlite";
+  connectionName: string;
+  databaseType: "PostgreSQL" | "MySQL";
   status: "connected" | "disconnected";
-  tables: Table[];
+  tables: string[];
 }
 
 export const DatabaseApp: React.FC = () => {
@@ -68,7 +68,7 @@ export const DatabaseApp: React.FC = () => {
 
           <div className="text-sm text-muted-foreground">
             {selectedDatabase
-              ? `Connected to ${selectedDatabase.name}`
+              ? `Connected to ${selectedDatabase.connectionName}`
               : "Select a database to begin"}
           </div>
         </div>

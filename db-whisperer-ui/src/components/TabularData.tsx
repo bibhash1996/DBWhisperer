@@ -16,12 +16,13 @@ export function TabularData(props: {
   heading: string;
   data: any[];
   columns: string[];
+  hide: boolean;
 }) {
   const [hide, setHide] = useState(false);
 
   useEffect(() => {
-    setHide(true);
-  }, [props.columns]);
+    setHide(props.hide);
+  }, [props.columns, props.hide]);
 
   return (
     <div className="p-6 border-b border-border overflow-x-auto max-w-[80vw]">
@@ -47,7 +48,7 @@ export function TabularData(props: {
         </CardHeader>
         <CardContent>
           {hide ? (
-            <p> Sample dataset is hidden</p>
+            <p> Data is hidden</p>
           ) : (
             <div className="border rounded-lg overflow-hidden">
               <Table>

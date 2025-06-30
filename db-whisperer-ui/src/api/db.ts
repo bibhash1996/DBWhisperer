@@ -14,7 +14,7 @@ export interface NaturalExecutionResponse {
   question: string;
   query: string;
   relevant: string;
-  query_result: string;
+  query_result: any[];
   connection_id: string;
   human_readable_response: string;
   logs: string[];

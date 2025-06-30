@@ -17,13 +17,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import {
-  executeNaturalLanguageQuery,
-  getSampleData,
-  NaturalExecutionResponse,
-} from "@/api/db";
+import { executeNaturalLanguageQuery, getSampleData } from "@/api/db";
 import { TabularData } from "./TabularData";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Message } from "./DatabaseApp";
 
 interface GeneratedQuery {
@@ -46,6 +41,7 @@ export const QueryInterface: React.FC<QueryInterfaceProps> = ({
   const [isExecuting, setIsExecuting] = useState(false);
   const [sampleData, setSampleData] = useState<any[]>([]);
   const [showApproval, setShowApproval] = useState(false);
+  const [queryResult, setQueryResult] = useState<{ [key: string]: any }>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -112,6 +108,7 @@ export const QueryInterface: React.FC<QueryInterfaceProps> = ({
         naturalLanguageInput.trim()
       );
       // setMessages((messages) => [...messages, { user: "system", response }]);
+      setQueryResult(response.query_result);
       addMessages({ user: "system", response });
     } catch (error) {
       toast({
@@ -206,6 +203,7 @@ export const QueryInterface: React.FC<QueryInterfaceProps> = ({
             heading="Sample Dataset"
             columns={Object.keys(sampleData[0])}
             data={sampleData}
+            hide={true}
           />
         </div>
       ) : undefined}
@@ -258,6 +256,19 @@ export const QueryInterface: React.FC<QueryInterfaceProps> = ({
               </Button>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Query result */}
+        <div className="flex-1  space-y-6">
+          {/* Empty State */}
+          {queryResult && Array.isArray(queryResult) && queryResult.length ? (
+            <TabularData
+              heading="Query Result"
+              columns={Object.keys(queryResult[0])}
+              data={queryResult}
+              hide={false}
+            />
+          ) : null}
         </div>
 
         {/* Results Section - Scrollable */}
