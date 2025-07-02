@@ -11,6 +11,7 @@ interface CreateConnection {
 }
 
 export interface NaturalExecutionResponse {
+  threadId: string;
   question: string;
   query: string;
   relevant: string;
@@ -74,6 +75,23 @@ export async function executeNaturalLanguageQuery(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ question }),
+  });
+  if (response.status >= 200 && response.status <= 299) {
+    const data = await response.json();
+    return data.data;
+  }
+}
+
+export async function approveQuery(
+  connectionId: string,
+  threadId: string
+): Promise<NaturalExecutionResponse> {
+  const response = await fetch(`${API_BASE_URL}/db/approve/${connectionId}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ threadId }),
   });
   if (response.status >= 200 && response.status <= 299) {
     const data = await response.json();

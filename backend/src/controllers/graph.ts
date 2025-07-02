@@ -1,12 +1,19 @@
 import "dotenv/config";
 import { ChatOpenAI } from "@langchain/openai";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
-import { Annotation, END, START, StateGraph } from "@langchain/langgraph";
+import {
+  Annotation,
+  END,
+  InMemoryStore,
+  START,
+  StateGraph,
+} from "@langchain/langgraph";
 import { ChatPromptTemplate, PromptTemplate } from "@langchain/core/prompts";
 import { RunnableSequence } from "@langchain/core/runnables";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import readline from "readline";
 import { connections, Database } from "../models/connection";
+import { MemorySaver } from "@langchain/langgraph-checkpoint";
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -266,14 +273,29 @@ async function executeSql(state: State) {
   console.log("=========================================");
   let logs = state.logs;
   logs.push("EXECUTING SQL QUERY");
+  console.log(state);
+  /**
+   * DB init again due to interrupt in graph again
+   */
+  const connection = getConnection(state.connection_id as string);
+  if (!connection) {
+    throw new Error("Invalid connection");
+  }
+  const db = new Database(connection);
+  if (!db) throw new Error("Error connecting to database");
+  /**
+   *
+   */
   const query = state.query as string;
   try {
-    const response = await (state.db as Database).executeQuery(query);
+    const response = await db.executeQuery(query);
     console.log(response);
     let result = humanReadableArray(response);
     console.log("Query Result");
     console.log(result);
     return {
+      ...state,
+      db,
       query_result: response,
       // sqlResult: response,
     };
@@ -342,7 +364,12 @@ const workflow = new StateGraph<State>({ channels: GraphState })
   .addEdge("generateFunnyResponse", END)
   .addEdge("generateHumarReadableResponse", END);
 
-const graph = workflow.compile();
+const checkpointer = new MemorySaver();
+
+const graph = workflow.compile({
+  checkpointer,
+  interruptBefore: ["executeSql"],
+});
 
 /**
  * pass in connection id and question to get the results

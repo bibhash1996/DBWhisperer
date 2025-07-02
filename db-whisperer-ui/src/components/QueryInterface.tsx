@@ -17,12 +17,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { executeNaturalLanguageQuery, getSampleData } from "@/api/db";
+import {
+  approveQuery,
+  executeNaturalLanguageQuery,
+  getSampleData,
+} from "@/api/db";
 import { TabularData } from "./TabularData";
 import { Message } from "./DatabaseApp";
 
 interface GeneratedQuery {
   sql: string;
+  threadId: string;
 }
 
 interface QueryInterfaceProps {
@@ -42,6 +47,9 @@ export const QueryInterface: React.FC<QueryInterfaceProps> = ({
   const [sampleData, setSampleData] = useState<any[]>([]);
   const [showApproval, setShowApproval] = useState(false);
   const [queryResult, setQueryResult] = useState<{ [key: string]: any }>([]);
+  const [generatedQuery, setGeneratedQuery] = useState<GeneratedQuery | null>(
+    null
+  );
   const { toast } = useToast();
 
   useEffect(() => {
@@ -95,10 +103,7 @@ export const QueryInterface: React.FC<QueryInterfaceProps> = ({
 
   const handleGenerateQuery = async () => {
     if (!naturalLanguageInput.trim()) return;
-    // setMessages((messages) => [
-    //   ...messages,
-    //   { user: "user", message: naturalLanguageInput.trim() },
-    // ]);
+    setQueryResult([]);
     addMessages({ user: "user", message: naturalLanguageInput.trim() });
     setIsGenerating(true);
     setNaturalLanguageInput("");
@@ -108,7 +113,9 @@ export const QueryInterface: React.FC<QueryInterfaceProps> = ({
         naturalLanguageInput.trim()
       );
       // setMessages((messages) => [...messages, { user: "system", response }]);
-      setQueryResult(response.query_result);
+      // setQueryResult(response.query_result);
+      setGeneratedQuery({ sql: response.query, threadId: response.threadId });
+      setShowApproval(true);
       addMessages({ user: "system", response });
     } catch (error) {
       toast({
@@ -119,6 +126,18 @@ export const QueryInterface: React.FC<QueryInterfaceProps> = ({
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const handleExecuteQuery = async () => {
+    setShowApproval(false);
+    if (!generatedQuery) return;
+    setIsExecuting(true);
+    const response = await approveQuery(
+      selectedDatabase.connectionId,
+      generatedQuery.threadId
+    );
+    setQueryResult(response.query_result);
+    setIsExecuting(false);
   };
 
   const copyToClipboard = (text: string) => {
@@ -174,7 +193,7 @@ export const QueryInterface: React.FC<QueryInterfaceProps> = ({
             )}
           </div>
           {selectedDatabase && (
-            <div className="text-right">
+            <div className="text-right flex flex-row items-center space-x-2">
               <p className="text-sm text-muted-foreground">Connected to</p>
               <p className="font-semibold text-foreground">
                 {selectedDatabase.connectionName}
@@ -183,9 +202,7 @@ export const QueryInterface: React.FC<QueryInterfaceProps> = ({
                 <div
                   className={cn(
                     "w-2 h-2 rounded-full",
-                    selectedDatabase.status === "connected"
-                      ? "bg-green-500"
-                      : "bg-red-500"
+                    selectedDatabase ? "bg-green-500" : "bg-red-500"
                   )}
                 />
                 <span className="text-xs text-muted-foreground capitalize">
@@ -258,9 +275,62 @@ export const QueryInterface: React.FC<QueryInterfaceProps> = ({
           </Card>
         </div>
 
-        {/* Query result */}
         <div className="flex-1  space-y-6">
-          {/* Empty State */}
+          {showApproval && generatedQuery && (
+            <Card className="border-blue-200 bg-blue-50/50">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <AlertCircle className="w-5 h-5 text-blue-600" />
+                    <span>Generated Query - Approval Required</span>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <div className="relative">
+                    <pre className="bg-muted p-4 rounded-lg text-sm font-mono overflow-x-auto">
+                      {generatedQuery.sql}
+                    </pre>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="absolute top-2 right-2"
+                      onClick={() => copyToClipboard(generatedQuery.sql)}
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex space-x-3">
+                  <Button
+                    onClick={handleExecuteQuery}
+                    disabled={isExecuting}
+                    className="flex-1"
+                  >
+                    {isExecuting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Executing...
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-4 h-4 mr-2" />
+                        Execute Query
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowApproval(false)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {queryResult && Array.isArray(queryResult) && queryResult.length ? (
             <TabularData
               heading="Query Result"

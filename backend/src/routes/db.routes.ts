@@ -101,9 +101,34 @@ router.post("/connection/test", async (req: Request, res: Response) => {
 });
 
 router.post("/execute/:id", async (req: Request, res: Response) => {
-  const response = await graph.invoke({
-    question: req.body.question,
-    connection_id: req.params.id,
+  let threadId = uuidv4();
+  const response = await graph.invoke(
+    {
+      question: req.body.question,
+      connection_id: req.params.id,
+    },
+    {
+      configurable: {
+        thread_id: threadId,
+      },
+    }
+  );
+
+  delete response.db;
+  delete response.schema;
+  response.threadId = threadId;
+  console.log(response);
+  res.status(200).json({
+    data: response,
+  });
+});
+
+router.post("/approve/:id", async (req: Request, res: Response) => {
+  let threadId = req.body.threadId;
+  const response = await graph.invoke(null, {
+    configurable: {
+      thread_id: threadId,
+    },
   });
 
   delete response.db;

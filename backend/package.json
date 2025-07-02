@@ -16,6 +16,7 @@
   "dependencies": {
     "@langchain/community": "^0.3.35",
     "@langchain/langgraph": "^0.2.55",
+    "@langchain/langgraph-checkpoint": "^0.0.18",
     "@langchain/langgraph-supervisor": "^0.0.9",
     "@types/express": "^4.17.21",
     "@types/node": "^20.11.24",
