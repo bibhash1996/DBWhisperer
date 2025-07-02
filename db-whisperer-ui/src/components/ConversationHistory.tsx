@@ -28,8 +28,8 @@ export const ConversationHistory: React.FC<ConversationHistoryProps> = ({
   };
 
   return (
-    <div className={cn("flex flex-col", className)}>
-      <Card className="flex-1 h-full">
+    <div className={cn("flex flex-col ", className)}>
+      <Card className="flex-1 h-full max-h-[90vh] overflow-y-auto">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg">
             Conversation History
