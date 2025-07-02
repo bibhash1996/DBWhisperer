@@ -44,7 +44,7 @@ export const DatabaseApp: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex w-full">
+    <div className="max-h-screen bg-background flex w-full">
       <DatabaseSidebar
         isCollapsed={sidebarCollapsed}
         onSelectTable={handleSelectTable}

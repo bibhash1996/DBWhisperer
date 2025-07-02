@@ -225,7 +225,7 @@ export const QueryInterface: React.FC<QueryInterfaceProps> = ({
         </div>
       ) : undefined}
 
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-y-auto">
         {/* Query Input Section */}
         <div className="p-6 border-b border-border">
           <Card>
@@ -275,7 +275,7 @@ export const QueryInterface: React.FC<QueryInterfaceProps> = ({
           </Card>
         </div>
 
-        <div className="flex-1  space-y-6">
+        <div className="flex-1  space-y-6 p-6 border-b border-border">
           {showApproval && generatedQuery && (
             <Card className="border-blue-200 bg-blue-50/50">
               <CardHeader>
